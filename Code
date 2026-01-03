@@ -1,0 +1,127 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// Read entire file into a byte buffer
+bool readFile(const string& path, vector<unsigned char>& data) {
+    ifstream in(path, ios::binary);
+    if (!in) return false;
+
+    in.seekg(0, ios::end);
+    streampos size = in.tellg();
+    in.seekg(0, ios::beg);
+
+    if (size < 0) return false;
+    data.resize(static_cast<size_t>(size));
+
+    if (!data.empty()) {
+        in.read(reinterpret_cast<char*>(data.data()), size);
+    }
+    return true;
+}
+
+// Write byte buffer to file
+bool writeFile(const string& path, const vector<unsigned char>& data) {
+    ofstream out(path, ios::binary);
+    if (!out) return false;
+
+    if (!data.empty()) {
+        out.write(reinterpret_cast<const char*>(data.data()), data.size());
+    }
+    return true;
+}
+
+// XOR cipher: same function encrypts/decrypts
+void xorCipher(vector<unsigned char>& data, const string& key) {
+    if (key.empty()) return;
+
+    for (size_t i = 0; i < data.size(); i++) {
+        data[i] = static_cast<unsigned char>(data[i] ^ static_cast<unsigned char>(key[i % key.size()]));
+    }
+}
+
+int main() {
+    while (true) {
+        cout << "\n=== Simple File Encryption/Decryption Tool (XOR) ===\n";
+        cout << "1) Encrypt a file\n";
+        cout << "2) Decrypt a file\n";
+        cout << "3) Exit\n";
+        cout << "Choose an option (1/2/3): ";
+
+        int option;
+        if (!(cin >> option)) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid input. Please enter 1, 2, or 3.\n";
+            continue;
+        }
+        cin.ignore(1000, '\n'); // clear newline
+
+        if (option == 3) {
+            cout << "Goodbye!\n";
+            break;
+        }
+
+        if (option != 1 && option != 2) {
+            cout << "Invalid choice. Please enter 1, 2, or 3.\n";
+            continue;
+        }
+
+        string inputPath, outputPath, key;
+
+        cout << "Enter input file path: ";
+        getline(cin, inputPath);
+
+        cout << "Enter output file path: ";
+        getline(cin, outputPath);
+
+        cout << "Enter key (any text): ";
+        getline(cin, key);
+
+        if (key.empty()) {
+            cout << "Key cannot be empty.\n";
+            continue;
+        }
+
+        vector<unsigned char> data;
+        if (!readFile(inputPath, data)) {
+            cout << "Failed to read file: " << inputPath << "\n";
+            continue;
+        }
+
+        xorCipher(data, key);
+
+        if (!writeFile(outputPath, data)) {
+            cout << "Failed to write file: " << outputPath << "\n";
+            continue;
+        }
+
+        if (option == 1) {
+            cout << "Encryption complete! Output saved to: " << outputPath << "\n";
+        } else {
+            cout << "Decryption complete! Output saved to: " << outputPath << "\n";
+        }
+
+        // Valid input enforcement for continuing
+        char again;
+        do {
+            cout << "Do you want to process another file? (Y/N): ";
+            cin >> again;
+            cin.ignore(1000, '\n');
+
+            if (again != 'Y' && again != 'y' && again != 'N' && again != 'n') {
+                cout << "Invalid input. Please enter Y or N.\n";
+            }
+        } while (again != 'Y' && again != 'y' && again != 'N' && again != 'n');
+
+        if (again == 'N' || again == 'n') {
+            cout << "Program ended.\n";
+            break;
+        }
+    }
+
+    return 0;
+}
